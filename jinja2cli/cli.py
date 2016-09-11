@@ -67,7 +67,7 @@ except ImportError:
         pass
 
 
-# ini - Nobody likes you.
+# ini
 try:
     # Python 2
     import ConfigParser
