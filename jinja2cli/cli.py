@@ -44,6 +44,9 @@ class MalformedQuerystring(InvalidInputData):
 class MalformedToml(InvalidDataFormat):
     pass
 
+class MalformedEnv(InvalidDataFormat):
+    pass
+
 
 # Global list of available format parsers on your system
 # mapped to the callable/Exception to parse a string into a dict
@@ -140,6 +143,11 @@ def _parse_qs(data):
 formats['querystring'] = (_parse_qs, Exception, MalformedQuerystring)
 
 
+def _parse_env(data):
+    return {}
+
+formats['env'] = (_parse_env, Exception, MalformedEnv)
+
 # toml (https://github.com/toml-lang/toml/)
 try:
     import toml
@@ -190,26 +198,33 @@ def render(template_path, data, extensions, strict=False):
 
 def cli(opts, args):
     format = opts.format
-    if args[1] == '-':
-        data = sys.stdin.read()
-        if format == 'auto':
-            # default to yaml first if available since yaml
-            # is a superset of json
-            if 'yaml' in formats:
-                format = 'yaml'
+    if len(args)>1:
+        if args[1] == '-':
+            data = sys.stdin.read()
+            if format == 'auto':
+                # default to yaml first if available since yaml
+                # is a superset of json
+                if 'yaml' in formats:
+                    format = 'yaml'
+                else:
+                    format = 'json'
+        else:
+            path = os.path.join(os.getcwd(), os.path.expanduser(args[1]))
+            if format == 'auto':
+                ext = os.path.splitext(path)[1][1:]
+                if ext in formats:
+                    format = ext
+                else:
+                    if ext in ('yml', 'yaml'):
+                        raise InvalidDataFormat('%s: install pyyaml to fix' % ext)
+                    raise InvalidDataFormat(ext)
             else:
-                format = 'json'
+                if format == 'env':
+                    data = ""
+                else:
+                    data = open(path).read()
     else:
-        path = os.path.join(os.getcwd(), os.path.expanduser(args[1]))
-        if format == 'auto':
-            ext = os.path.splitext(path)[1][1:]
-            if ext in formats:
-                format = ext
-            else:
-                if ext in ('yml', 'yaml'):
-                    raise InvalidDataFormat('%s: install pyyaml to fix' % ext)
-                raise InvalidDataFormat(ext)
-        data = open(path).read()
+        data = ""
 
     template_path = os.path.abspath(args[0])
 
@@ -263,7 +278,7 @@ def main():
     parser.add_option(
         '--format',
         help='format of input variables: %s' % ', '.join(get_formats()),
-        dest='format', action='store', default='auto')
+        dest='format', action='store', default='env')
     parser.add_option(
         '-e', '--extension',
         help='extra jinja2 extensions to load',
@@ -292,10 +307,6 @@ def main():
     if args[0] == 'help':
         parser.print_help()
         sys.exit(1)
-
-    # Without the second argv, assume they want to read from stdin
-    if len(args) == 1:
-        args.append('-')
 
     if opts.format not in formats and opts.format != 'auto':
         if opts.format in ('yml', 'yaml'):
