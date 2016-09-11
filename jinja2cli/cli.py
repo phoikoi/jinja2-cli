@@ -47,6 +47,9 @@ class MalformedToml(InvalidDataFormat):
 class MalformedEnv(InvalidDataFormat):
     pass
 
+class MalformedQSArg(InvalidDataFormat):
+    pass
+
 
 # Global list of available format parsers on your system
 # mapped to the callable/Exception to parse a string into a dict
@@ -141,6 +144,7 @@ def _parse_qs(data):
 
 
 formats['querystring'] = (_parse_qs, Exception, MalformedQuerystring)
+formats['qsarg'] = (_parse_qs, Exception, MalformedQuerystring)
 
 
 def _parse_env(data):
@@ -221,6 +225,8 @@ def cli(opts, args):
             else:
                 if format == 'env':
                     data = ""
+                elif format == "qsarg":
+                    data = args[1]
                 else:
                     data = open(path).read()
     else:
