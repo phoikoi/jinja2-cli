@@ -37,7 +37,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'jinja2 = jinja2cli:main',
+            'j2 = jinja2cli:main',
         ]
     },
     classifiers=[
