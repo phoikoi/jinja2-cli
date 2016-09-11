@@ -155,6 +155,15 @@ from optparse import OptionParser
 import jinja2
 from jinja2 import Environment, FileSystemLoader
 
+class LooseUndefined(jinja2.Undefined):
+    def __int__(self):
+        return 0
+    def __float__(self):
+        return 0.0
+    def __str__(self):
+        return ""
+    def __unicode__(self):
+        return u""
 
 def format_data(format_, data):
     return formats[format_][0](data)
@@ -169,6 +178,8 @@ def render(template_path, data, extensions, strict=False):
     if strict:
         from jinja2 import StrictUndefined
         env.undefined = StrictUndefined
+    else:
+        env.undefined = LooseUndefined
 
     # Add environ global
     env.globals['environ'] = os.environ.get
