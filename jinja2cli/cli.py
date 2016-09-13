@@ -263,7 +263,7 @@ def cli(opts, args):
 
     if isinstance(output, binary_type):
         output = output.decode('utf-8')
-    sys.stdout.write(output)
+    sys.stdout.write(output.encode('utf-8'))
     sys.exit(0)
 
 
